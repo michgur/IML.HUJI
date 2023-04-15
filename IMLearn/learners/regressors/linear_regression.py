@@ -34,22 +34,6 @@ class LinearRegression(BaseEstimator):
         super().__init__()
         self.include_intercept_, self.coefs_ = include_intercept, None
 
-    def _prepare(self, X: np.ndarray) -> np.ndarray:
-        """
-        Prepare data based on self.include_intercept_ attribute
-
-        Parameters
-        ----------
-        X : ndarray of shape (n_samples, n_features)
-            Input data to prepare
-
-        Returns
-        -------
-        prepared_data : ndarray of shape (n_samples, n_features)
-            Prepared data
-        """
-        return np.hstack((np.ones((X.shape[0], 1)), X)) if self.include_intercept_ else X
-
     def _fit(self, X: np.ndarray, y: np.ndarray) -> NoReturn:
         """
         Fit Least Squares model to given samples
@@ -66,7 +50,7 @@ class LinearRegression(BaseEstimator):
         -----
         Fits model with or without an intercept depending on value of `self.include_intercept_`
         """
-        X = self._prepare(X)
+        X = self.__transform(X)
         self.coefs_ = pinv(X) @ y
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
@@ -83,7 +67,7 @@ class LinearRegression(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        X = self._prepare(X)
+        X = self.__transform(X)
         return X @ self.coefs_
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
@@ -105,3 +89,19 @@ class LinearRegression(BaseEstimator):
         """
         y_pred = self.predict(X)
         return mean_square_error(y, y_pred)
+    
+    def __transform(self, X: np.ndarray) -> np.ndarray:
+        """
+        Prepare data based on self.include_intercept_ attribute
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples, n_features)
+            Input data to prepare
+
+        Returns
+        -------
+        prepared_data : ndarray of shape (n_samples, n_features)
+            Prepared data
+        """
+        return np.hstack((np.ones((X.shape[0], 1)), X)) if self.include_intercept_ else X
