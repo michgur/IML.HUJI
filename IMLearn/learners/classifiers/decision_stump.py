@@ -30,7 +30,7 @@ class DecisionStump(BaseEstimator):
 
     def _fit(self, X: np.ndarray, y: np.ndarray) -> NoReturn:
         """
-        fits a decision stump to the given data
+        Fit a decision stump to the given data. That is, finds the best feature and threshold by which to split
 
         Parameters
         ----------
@@ -54,7 +54,7 @@ class DecisionStump(BaseEstimator):
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
-        Predict responses for given samples using fitted estimator
+        Predict sign responses for given samples using fitted estimator
 
         Parameters
         ----------
