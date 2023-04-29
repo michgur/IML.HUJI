@@ -32,7 +32,7 @@ class LDA(BaseEstimator):
         super().__init__()
         self.classes_, self.mu_, self.cov_, self._cov_inv, self.pi_ = None, None, None, None, None
 
-    def _fit(self, X: np.ndarray, y: np.ndarray) -> NoReturn:
+    def _fit(self, X: np.ndarray, y: np.ndarray) -> None:
         """
         fits an LDA model.
         Estimates gaussian for each label class - Different mean vector, same covariance
@@ -46,7 +46,12 @@ class LDA(BaseEstimator):
         y : ndarray of shape (n_samples, )
             Responses of input data to fit to
         """
-        raise NotImplementedError()
+        self.classes_ = np.unique(y)
+        self.pi_ = np.array([np.mean(y == c) for c in self.classes_])
+        self.mu_ = np.array([np.mean(X[y == c], axis=0) for c in self.classes_])
+        d = X - self.mu_[y]
+        self.cov_ = (d.T @ d) / X.shape[0]
+        self._cov_inv = inv(self.cov_)
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -62,7 +67,7 @@ class LDA(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        raise NotImplementedError()
+        return self.classes_[np.argmax(self.likelihood(X), axis=1)]
 
     def likelihood(self, X: np.ndarray) -> np.ndarray:
         """
@@ -82,7 +87,10 @@ class LDA(BaseEstimator):
         if not self.fitted_:
             raise ValueError("Estimator must first be fitted before calling `likelihood` function")
 
-        raise NotImplementedError()
+        z = np.sqrt(det(self.cov_) * (2 * np.pi) ** X.shape[1])
+        d = X[:, np.newaxis, :] - self.mu_  # d.shape = (m, K, d); calculate likelihood for each k
+        exp = np.exp(-0.5 * (d @ self._cov_inv * d).sum(axis=2)) # equivalent to exp(-0.5 * (x @ _cov_inv @ x.T) for x in d)
+        return self.pi_ * exp / z
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -102,4 +110,5 @@ class LDA(BaseEstimator):
             Performance under missclassification loss function
         """
         from ...metrics import misclassification_error
-        raise NotImplementedError()
+        y_pred = self._predict(X)
+        return misclassification_error(y, y_pred)

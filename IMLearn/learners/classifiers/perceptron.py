@@ -77,7 +77,7 @@ class Perceptron(BaseEstimator):
         self.coefs_ = np.zeros(X.shape[1])
 
         for t in range(self.max_iter_):
-            test = np.where((X @ self.coefs_ @ y.T) <= 0)[0]
+            test = np.where((X @ self.coefs_) * y <= 0)[0]
             if test.size == 0:
                 break
             
@@ -120,7 +120,7 @@ class Perceptron(BaseEstimator):
             Performance under missclassification loss function
         """
         from ...metrics import misclassification_error
-        y_pred = self.predict(X)
+        y_pred = self._predict(X)
         return misclassification_error(y, y_pred)
     
     def __transform(self, X: np.ndarray) -> np.ndarray:

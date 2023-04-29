@@ -1,5 +1,11 @@
+import sys
+
+sys.path.append("../")
+sys.path.append("../../")
+sys.path.append("../../../")
+
 from IMLearn.learners.classifiers import Perceptron, LDA, GaussianNaiveBayes
-from typing import Tuple
+from typing import Tuple, Callable
 from utils import *
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -38,14 +44,20 @@ def run_perceptron():
     """
     for n, f in [("Linearly Separable", "linearly_separable.npy"), ("Linearly Inseparable", "linearly_inseparable.npy")]:
         # Load dataset
-        raise NotImplementedError()
+        X, y = load_dataset(f"../datasets/{f}")
 
         # Fit Perceptron and record loss in each fit iteration
         losses = []
-        raise NotImplementedError()
+        def record_loss(p: Perceptron, sample_x: np.ndarray, sample_y: int):
+            losses.append(p._loss(X, y))
+            # print(f"X: {sample_x}, y: {sample_y}, loss: {losses[-1]}")
+        Perceptron(callback=record_loss).fit(X, y)
 
         # Plot figure of loss as function of fitting iteration
-        raise NotImplementedError()
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=np.arange(len(losses)), y=losses, mode="lines"))
+        fig.update_layout(title=f"Perceptron Loss ({n} Dataset)", xaxis_title="Iteration", yaxis_title="Loss")
+        fig.show()
 
 
 def get_ellipse(mu: np.ndarray, cov: np.ndarray):
@@ -79,28 +91,56 @@ def compare_gaussian_classifiers():
     """
     for f in ["gaussian1.npy", "gaussian2.npy"]:
         # Load dataset
-        raise NotImplementedError()
+        X, y = load_dataset(f"../datasets/{f}")
 
         # Fit models and predict over training set
-        raise NotImplementedError()
+        gnb, lda = GaussianNaiveBayes().fit(X, y), LDA().fit(X, y)
+        gnb_predictions, lda_predictions = gnb.predict(X), lda.predict(X)
 
         # Plot a figure with two suplots, showing the Gaussian Naive Bayes predictions on the left and LDA predictions
         # on the right. Plot title should specify dataset used and subplot titles should specify algorithm and accuracy
         # Create subplots
         from IMLearn.metrics import accuracy
-        raise NotImplementedError()
 
+        fig = go.Figure()
+        fig = make_subplots(rows=1, cols=2, subplot_titles=[
+            f"algorithm: Gaussian Naive Bayes - accuracy: {accuracy(y, gnb_predictions)}",
+            f"algorithm: LDA - accuracy: {accuracy(y, lda_predictions)}",
+        ])
         # Add traces for data-points setting symbols and colors
-        raise NotImplementedError()
-
+        fig.add_traces(
+            [
+                go.Scatter(x=X[:, 0], y=X[:, 1], mode="markers", marker_color=p, marker_symbol=y)
+                for p in [gnb_predictions, lda_predictions]
+            ],
+            rows=[1, 1], cols=[1, 2]
+        )
         # Add `X` dots specifying fitted Gaussians' means
-        raise NotImplementedError()
-
         # Add ellipses depicting the covariances of the fitted Gaussians
-        raise NotImplementedError()
+        K = np.unique(y).size
+        mu = [gnb.mu_, lda.mu_]
+        cov = [
+            # gnb - cov matrix is diagonal, since features are independent
+            [np.diag(v) for v in gnb.vars_],
+            # lda - cov matrix is the same for all classes
+            [lda.cov_] * K,
+        ]
+        trace_center = lambda m, c: go.Scatter(x=[m[0]], y=[m[1]], mode="markers", marker_color="black", marker_symbol="x")
+        trace_ellipse = lambda m, c: get_ellipse(m, c)
+        fig.add_traces(
+            [
+                trace(m[k], c[k])
+                for k in range(K)
+                for m, c in zip(mu, cov)
+                for trace in [trace_center, trace_ellipse]
+            ],
+            rows=[1] * 4 * K, cols=[1, 1, 2, 2] * K
+        )
+        fig.update_layout(title=f"dataset: {f}", showlegend=False)
+        fig.show()
 
 
 if __name__ == '__main__':
     np.random.seed(0)
-    run_perceptron()
+    # run_perceptron()
     compare_gaussian_classifiers()
