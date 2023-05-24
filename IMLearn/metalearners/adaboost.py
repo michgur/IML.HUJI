@@ -35,7 +35,9 @@ class AdaBoost(BaseEstimator):
         super().__init__()
         self.wl_ = wl
         self.iterations_ = iterations
-        self.models_, self.weights_, self.D_ = None, None, None
+        self.models_ = [None] * iterations
+        self.weights_ = np.zeros(iterations)
+        self.D_ = None
 
     def _fit(self, X: np.ndarray, y: np.ndarray) -> NoReturn:
         """
@@ -59,7 +61,7 @@ class AdaBoost(BaseEstimator):
             pred = self.models_[t].predict(X)
             err = np.sum(self.D_[y != pred])
             # update model weight
-            self.weights_[t] = 0.5 * np.ln((1 / err) - 1)
+            self.weights_[t] = 0.5 * np.log((1 / err) - 1)
             # update sample weights
             self.D_ *= np.exp(-y * self.weights_[t] * pred)
             # normalize D
@@ -118,7 +120,7 @@ class AdaBoost(BaseEstimator):
             Predicted responses of given samples
         """
         pred = np.array([h.predict(X) for h in self.models_[:T]])
-        return np.sign(np.sum(self.weights_[:T, np.newaxis] * pred))
+        return np.sign(np.sum(self.weights_[:T, np.newaxis] * pred, axis=0))
 
     def partial_loss(self, X: np.ndarray, y: np.ndarray, T: int) -> float:
         """

@@ -41,11 +41,11 @@ class DecisionStump(BaseEstimator):
             Responses of input data to fit to
         """
         # find error for each feature, threshold, and sign
-        errors = (
+        errors = [
             (self._find_threshold(X[:, i], y, sign), i, sign)
             for i in range(X.shape[1])
             for sign in [-1, 1]
-        )
+        ]
         # find minimum error, set attributes accordingly
         (self.threshold_, _), self.j_, self.sign_ = min(
             errors,
@@ -106,15 +106,28 @@ class DecisionStump(BaseEstimator):
         For every tested threshold, values strictly below threshold are predicted as `-sign` whereas values
         which equal to or above the threshold are predicted as `sign`
         """
-        # predict for unique t values
-        thresholds = np.unique(values)
-        # compare each value with each t
-        predictions = np.where(values[:, np.newaxis] < thresholds, -sign, sign)
-        # calculate error for each t
-        errors = np.sum(predictions != labels[:, np.newaxis], axis=0)
-        # find t with minimum error
+        # for each t, the error is the (weighted) sum of
+        # + number of values below t labeled  sign
+        # + number of values above t labeled -sign
+        # by sorting values, we avoid having to count these per t
+        sort_index = np.argsort(values)
+        values, labels = values[sort_index], labels[sort_index]
+        # if the last t is chosen (all labels = sign), don't split
+        values[-1] = np.inf
+
+        # weight samples by absolute value to simulate distribution
+        signs, weights = np.sign(labels), np.abs(labels)
+        # number of values below t labeled  sign. count from left to right
+        pos_below = np.cumsum((signs == sign) * weights)
+        # number of values above t labeled -sign. count from right to left
+        neg_above = np.cumsum(((signs == -sign) * weights)[::-1])[::-1]
+        # error of t is pos_below[t] + neg_above[t + 1]
+        errors = pos_below + np.roll(neg_above, -1)
+        # fix the last error (remove neg_above[0] which rolls to the end)
+        errors[-1] = pos_below[-1]
+        # find and return threshold with minimum error
         t = np.argmin(errors)
-        return thresholds[t], errors[t]
+        return values[t], errors[t]
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
