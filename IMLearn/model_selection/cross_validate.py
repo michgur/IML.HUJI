@@ -39,7 +39,7 @@ def cross_validate(estimator: BaseEstimator, X: np.ndarray, y: np.ndarray,
     """
     train_e, validation_e = np.zeros(cv), np.zeros(cv)
     # indices to split data into train and validation sets
-    cv_indices = np.arange(0, X.shape[0], X.shape[0] // cv)
+    cv_indices = np.linspace(0, X.shape[0], cv + 1, dtype=int)
     for i in range(cv):
         # train on all data except S_i
         train_X = np.concatenate((X[:cv_indices[i]], X[cv_indices[i + 1]:]))

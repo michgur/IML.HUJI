@@ -49,13 +49,16 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
         np.array([model.partial_loss(X, y, t) for t in n_iter])
         for X, y in [[train_X, train_y], [test_X, test_y]]
     ]
-    df = pd.DataFrame({'x': n_iter, 'train': train_e, 'test': test_e})
-    px.line(
-        df,
-        x='x',
-        y=['train', 'test'],
-        labels={'value': 'error', 'x': '# of learners', 'variable': 'dataset'},
-        title="Train and test error as a function of # of learners in ensemble",
+    go.Figure(
+        data=[
+            go.Scatter(x=n_iter, y=train_e, name="train", mode="lines"),
+            go.Scatter(x=n_iter, y=test_e, name="test", mode="lines"),
+        ],
+        layout=go.Layout(
+            title="Train and test error as a function of # of learners in ensemble",
+            xaxis=dict(title="# of learners"),
+            yaxis=dict(title="error"),
+        ),
     ).show()
 
     # Question 2: Plotting decision surfaces
