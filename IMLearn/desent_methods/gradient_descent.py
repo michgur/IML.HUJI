@@ -44,7 +44,7 @@ class GradientDescent:
                  tol: float = 1e-5,
                  max_iter: int = 1000,
                  out_type: str = "last",
-                 callback: Callable[[GradientDescent, ...], None] = default_callback):
+                 callback: Callable = default_callback):
         """
         Instantiate a new instance of the GradientDescent class
 
@@ -119,4 +119,36 @@ class GradientDescent:
                 Euclidean norm of w^(t)-w^(t-1)
 
         """
-        raise NotImplementedError()
+        out = f.weights
+        if self.out_type_ == "best":
+            best_val = f.compute_output(X=X, y=y)
+
+        for t in range(self.max_iter_):
+            eta = self.learning_rate_.lr_step(t=t)
+            grad = f.compute_jacobian(X=X, y=y)
+            delta = eta * grad
+            f.weights -= delta
+            val = f.compute_output(X=X, y=y)
+            self.callback_(
+                solver=self,
+                weights=f.weights,
+                val=val,
+                grad=grad,
+                t=t,
+                eta=eta,
+                delta=delta,
+            )
+            if self.out_type_ == "average":
+                out += f.weights
+            elif self.out_type_ == "best" and val > best_val:
+                out = f.weights
+
+            if np.dot(delta, delta) < self.tol_:
+                break
+        
+        if self.out_type_ == "last":
+            out = f.weights
+        elif self.out_type_ == "average":
+            out /= t
+        
+        return out
