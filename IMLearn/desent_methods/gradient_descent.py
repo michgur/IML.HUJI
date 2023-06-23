@@ -126,12 +126,13 @@ class GradientDescent:
         for t in range(self.max_iter_):
             eta = self.learning_rate_.lr_step(t=t)
             grad = f.compute_jacobian(X=X, y=y)
-            delta = eta * grad
-            f.weights -= delta
+            step = eta * grad
+            f.weights -= step
+            delta = np.dot(step, step)
             val = f.compute_output(X=X, y=y)
             self.callback_(
                 solver=self,
-                weights=f.weights,
+                weights=f.weights.copy(),
                 val=val,
                 grad=grad,
                 t=t,
@@ -142,8 +143,9 @@ class GradientDescent:
                 out += f.weights
             elif self.out_type_ == "best" and val > best_val:
                 out = f.weights
+                best_val = val
 
-            if np.dot(delta, delta) < self.tol_:
+            if delta < self.tol_:
                 break
         
         if self.out_type_ == "last":
