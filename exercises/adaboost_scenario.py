@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Tuple, List
+from typing import Tuple
 from IMLearn.metalearners.adaboost import AdaBoost
 from IMLearn.learners.classifiers import DecisionStump
 from IMLearn.metrics.loss_functions import accuracy

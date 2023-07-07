@@ -86,8 +86,8 @@ class LogisticRegression(BaseEstimator):
 
         Notes
         -----
-        Fits model using specified `self.optimizer_` passed when instantiating class and includes an intercept
-        if specified by `self.include_intercept_`
+        Fits model using specified `self.solver_` passed when instantiating class and includes an intercept
+        if specified by `self.include_intercept_
         """
         # sample w0 from gaussian distribution with mean 0 and std 1/n_features
         X = self.__transform(X)
